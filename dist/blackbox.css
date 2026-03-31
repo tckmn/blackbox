@@ -3,9 +3,12 @@ html, body { font: 12pt sans-serif; }
 main#grid { display: grid; grid-template-columns: 1fr 1fr; }
 
 nav { font-size: 15pt; position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 1rem; align-items: center; padding: 0.5rem 1rem; background-color: #ccc; }
-nav > div.col { display: flex; align-items: stretch; justify-content: stretch; width: 1rem; height: 1rem; }
+nav input { font-size: 13pt; }
+nav > div.col { display: flex; align-items: stretch; justify-content: stretch; gap: 1px; width: 1rem; height: 1rem; }
 nav > div.col > div { border: 1px solid black; flex: 1; }
 nav > div.col#col1 { flex-direction: column; }
 nav > form { flex: 1; display: flex; }
 nav > form > div#guessArea { flex: 1; }
-nav > div#status { background-color: #ff0; width: 1rem; height: 1rem; border-radius: 1rem; }
+nav > div#status { background-color: #cb1; width: 1rem; height: 1rem; border-radius: 1rem; }
+nav > div#status[data-status="good"] { background-color: #1a2; }
+nav > div#status[data-status="bad"] { background-color: #e10; }

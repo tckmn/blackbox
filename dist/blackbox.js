@@ -9,15 +9,19 @@ function renderResponse(str) {
 }
 
 function extractGuess(area) {
-    return area.firstChild.value;
+    const ret = area.firstChild.value;
+    area.firstChild.value = '';
+    return ret;
 }
 
 window.addEventListener('load', () => {
     const grid = document.getElementById('grid');
+    const status = document.getElementById('status');
 
     const ws = new WebSocket('/ws');
-    ws.addEventListener('open', () => { console.log('open'); });
-    ws.addEventListener('error', () => { console.log('error'); });
+    ws.addEventListener('open', () => { status.dataset.status = 'good'; });
+    ws.addEventListener('error', () => { status.dataset.status = 'bad'; });
+    ws.addEventListener('close', () => { status.dataset.status = 'bad'; });
     ws.addEventListener('message', msg => { const j = JSON.parse(msg.data); handlers[j.t](j.c); });
 
     const form = document.getElementById('guessForm');
@@ -29,9 +33,16 @@ window.addEventListener('load', () => {
 
     const handlers = {
 
+        AllGuesses: guesses => {
+            grid.replaceChildren(...guesses.flatMap(pair => [
+                renderGuess(pair[0]),
+                renderResponse(pair[1])
+            ]));
+        },
+
         OneGuess: pair => {
             grid.append(renderGuess(pair[0]));
-            grid.append(renderResponse(pair[0]));
+            grid.append(renderResponse(pair[1]));
         }
 
     };
