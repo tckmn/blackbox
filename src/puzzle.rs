@@ -1,7 +1,10 @@
+use rocket::serde::{json, Serialize, DeserializeOwned};
+
 pub struct Puzzle {
-    pub evaluate: Box<dyn Fn(&String) -> String + Send + Sync>
+    pub name: String,
+    pub evaluate: Box<dyn Fn(&String) -> Result<String, json::serde_json::Error> + Send + Sync>
 }
 
-pub fn make_puzzle<T, U, F: Fn(&String) -> T + 'static + Send + Sync, G: Fn(&U) -> String + 'static + Send + Sync, H: Fn(&T) -> U + 'static + Send + Sync>(from_guess: F, to_response: G, evaluate: H) -> Puzzle {
-    return Puzzle { evaluate: Box::new(move |s| -> String { to_response(&evaluate(&from_guess(s))) }) };
+pub fn make_puzzle<T: DeserializeOwned, U: Serialize, H: Fn(&T) -> U + 'static + Send + Sync>(name: String, evaluate: H) -> Puzzle {
+    return Puzzle { name, evaluate: Box::new(move |s| -> Result<String, json::serde_json::Error> { json::to_string(&evaluate(&json::from_str(s)?)) }) };
 }

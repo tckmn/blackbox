@@ -5,7 +5,7 @@ use rocket::fs::FileServer;
 use rocket::tokio::sync::Mutex;
 use rocket::tokio::sync::broadcast;
 use rocket::futures::{StreamExt, SinkExt};
-use rocket::serde::{Serialize, Deserialize};
+use rocket::serde::{json, Serialize, Deserialize};
 use std::sync::Arc;
 use std::sync::atomic::{Ordering, AtomicUsize};
 
@@ -16,7 +16,12 @@ use all_puzzles::ALL_PUZZLES;
 struct BlackBox {
     channel: broadcast::Sender<BroadcastMessage>,
     guesses: Arc<Mutex<Vec<(String, String)>>>,
-    puzzle: AtomicUsize
+    puzzle_idx: AtomicUsize
+}
+
+impl BlackBox {
+    fn puzzle(&self) -> &puzzle::Puzzle { &ALL_PUZZLES[self.puzzle_idx.load(Ordering::Acquire)] }
+    fn set_puzzle(&self, idx: usize) { self.puzzle_idx.store(idx, Ordering::Release); }
 }
 
 #[derive(Clone)]
@@ -34,13 +39,14 @@ enum InputMessage {
 #[serde(crate = "rocket::serde")]
 #[serde(tag = "t", content = "c")]
 enum OutputMessage<'a> {
+    SetPuzzle(&'a String),
     AllGuesses(&'a Vec<(String, String)>),
     OneGuess(&'a String, &'a String)
 }
 
 macro_rules! send {
     ( $stream:expr, $x:expr ) => {
-        let _ = $stream.send(rocket::serde::json::to_string(&$x).unwrap().into()).await;
+        let _ = $stream.send(json::to_string(&$x).unwrap().into()).await;
     };
 }
 
@@ -49,6 +55,7 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
     ws.channel(move |mut stream| Box::pin(async move {
         {
             let guesses = bb.guesses.lock().await;
+            send!(stream, OutputMessage::SetPuzzle(&bb.puzzle().name));
             send!(stream, OutputMessage::AllGuesses(&*guesses));
         }
 
@@ -67,12 +74,13 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
                     let Some(msg) = msg else { break };
                     match msg {
                         Ok(ws::Message::Text(txt)) => {
-                            match rocket::serde::json::from_str(&txt) {
+                            match json::from_str(&txt) {
                                 Ok(InputMessage::MakeGuess(guess)) => {
-                                    let response = (ALL_PUZZLES[bb.puzzle.load(Ordering::Relaxed)].evaluate)(&guess).clone();
-                                    let _ = bb.channel.send(BroadcastMessage::NewGuess(guess.clone(), response.clone()));
-                                    let mut guesses = bb.guesses.lock().await;
-                                    guesses.push((guess, response));
+                                    if let Ok(response) = (bb.puzzle().evaluate)(&guess) {
+                                        let _ = bb.channel.send(BroadcastMessage::NewGuess(guess.clone(), response.clone()));
+                                        let mut guesses = bb.guesses.lock().await;
+                                        guesses.push((guess, response));
+                                    }
                                 }
                                 Err(e) => { eprintln!("{}", e); }
                             }
@@ -95,7 +103,7 @@ fn rocket() -> _ {
         .manage(BlackBox {
             channel: tx,
             guesses: Arc::new(Mutex::new(Vec::new())),
-            puzzle: AtomicUsize::new(0)
+            puzzle_idx: AtomicUsize::new(0)
         })
         .mount("/", FileServer::from("dist"))
         .mount("/", routes![route_ws])
