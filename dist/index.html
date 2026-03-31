@@ -4,8 +4,20 @@
         <meta charset='utf-8'>
         <meta name='viewport' content='width=device-width'>
         <title>hi</title>
+        <script type='text/javascript' src='blackbox.js'></script>
+        <link rel='stylesheet' type='text/css' href='blackbox.css'></link>
     </head>
     <body>
-        hi
+        <main id='grid'></main>
+        <nav>
+            <div>▾</div>
+            <div class='col' id='col1'><div></div><div></div></div>
+            <div class='col' id='col2'><div></div><div></div></div>
+            <form id='guessForm' autocomplete='off'>
+                <div id='guessArea'><input></div>
+                <input type='submit' value='guess'>
+            </form>
+            <div id='status'></div>
+        </nav>
     </body>
 </html>
