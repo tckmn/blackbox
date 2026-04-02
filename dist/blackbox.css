@@ -1,14 +1,26 @@
 html, body { font: 12pt sans-serif; }
 
 main#grid { display: grid; grid-template-columns: 1fr 1fr; }
+body.col1 main#grid { grid-template-columns: 1fr; }
+body.col1 main#grid > div:nth-child(2n) { margin-bottom: 10px; }
 
-nav { font-size: 15pt; position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 1rem; align-items: center; padding: 0.5rem 1rem; background-color: #ccc; }
-nav input { font-size: 13pt; }
-nav > div.col { display: flex; align-items: stretch; justify-content: stretch; gap: 1px; width: 1rem; height: 1rem; }
-nav > div.col > div { border: 1px solid black; flex: 1; }
-nav > div.col#col1 { flex-direction: column; }
+nav { font-size: 15pt; position: fixed; bottom: 0; left: 0; right: 0; display: flex; align-items: center; padding: 0 0.5rem; background-color: #ccc; }
+nav input { font-size: 13pt; margin: 0.5rem 0; }
+nav > * { margin: 0 0.5rem; }
+nav > div.btn { margin: 0; padding: 0 0.5rem; align-self: stretch; display: flex; align-items: center; cursor: pointer; user-select: none; }
+nav > div.btn:hover { background-color: #bbb; }
+nav > div.col > div { display: flex; align-items: stretch; justify-content: stretch; gap: 1px; width: 1rem; height: 1rem; }
+nav > div.col > div > div { border: 1px solid black; flex: 1; }
+nav > div.col#col1 > div { flex-direction: column; }
+body.col1 div.col#col1, body.col2 div.col#col2 { background-color: #aaa; }
 nav > form { flex: 1; display: flex; }
-nav > form > div#guessArea { flex: 1; }
+nav > form > div#guessArea { flex: 1; display: flex; }
+nav > form > div#guessArea > input { flex: 1; }
 nav > div#status { background-color: #cb1; width: 1rem; height: 1rem; border-radius: 1rem; }
 nav > div#status[data-status="good"] { background-color: #1a2; }
 nav > div#status[data-status="bad"] { background-color: #e10; }
+
+body.collapsed nav { display: none; }
+#uncollapse { font-size: 15pt; position: fixed; bottom: 10px; right: 10px; width: 2em; height: 2em; align-items: center; justify-content: center; background-color: #ccc; display: none; cursor: pointer; user-select: none; }
+#uncollapse:hover { background-color: #bbb; }
+body.collapsed #uncollapse { display: flex; }

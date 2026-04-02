@@ -7,17 +7,18 @@
         <script type='text/javascript' src='blackbox.js'></script>
         <link rel='stylesheet' type='text/css' href='blackbox.css'></link>
     </head>
-    <body>
+    <body class='col2'>
         <main id='grid'></main>
         <nav>
-            <div>▾</div>
-            <div class='col' id='col1'><div></div><div></div></div>
-            <div class='col' id='col2'><div></div><div></div></div>
+            <div class='btn' id='collapse'>▾</div>
+            <div class='btn col' id='col1'><div><div></div><div></div></div></div>
+            <div class='btn col' id='col2'><div><div></div><div></div></div></div>
             <form id='guessForm' autocomplete='off'>
-                <div id='guessArea'><input></div>
+                <div id='guessArea'></div>
                 <input type='submit' value='guess'>
             </form>
             <div id='status'></div>
         </nav>
+        <div id='uncollapse'>▴</div>
     </body>
 </html>

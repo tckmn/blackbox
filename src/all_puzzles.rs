@@ -1,9 +1,25 @@
 use std::sync::LazyLock;
 
 use crate::puzzle::{Puzzle, make_puzzle};
+use crate::puzzle::PuzType::*;
 
-fn dumb_puzzle(s: &String) -> String { format!("[{}]", s) }
+// via @tobia
+// https://users.rust-lang.org/t/logarithmic-counting-macro/8918
+macro_rules! count {
+    () => {0usize};
+    ($one:expr) => {1usize};
+    ($($pairs:expr, $_p:expr),*) => { count!($($pairs),*) << 1usize };
+    ($odd:expr, $($rest:expr),*) => { count!($($rest),*) | 1usize };
+}
 
-pub static ALL_PUZZLES: LazyLock<[Puzzle; 1]> = LazyLock::new(|| { [
-    make_puzzle("dumb".into(), dumb_puzzle)
-] });
+macro_rules! puzzles {
+    ($($x:expr),*) => {
+        pub static ALL_PUZZLES: LazyLock<[Puzzle; count!($($x),*)]> = LazyLock::new(|| { [$($x),*] });
+    };
+}
+
+
+puzzles!(
+    make_puzzle("one".into(), STR, STR, |s: &String| { format!("[{}]", s) }),
+    make_puzzle("two".into(), NUM, NUM, |n: &i64| { n + 1 })
+);

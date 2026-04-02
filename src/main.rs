@@ -26,7 +26,8 @@ impl BlackBox {
 
 #[derive(Clone)]
 enum BroadcastMessage {
-    NewGuess(String, String)
+    NewGuess(String, String),
+    NewPuzzle()
 }
 
 #[derive(Deserialize)]
@@ -39,7 +40,7 @@ enum InputMessage {
 #[serde(crate = "rocket::serde")]
 #[serde(tag = "t", content = "c")]
 enum OutputMessage<'a> {
-    SetPuzzle(&'a String),
+    SetPuzzle(&'a String, &'a puzzle::PuzType, &'a puzzle::PuzType),
     AllGuesses(&'a Vec<(String, String)>),
     OneGuess(&'a String, &'a String)
 }
@@ -50,12 +51,18 @@ macro_rules! send {
     };
 }
 
+macro_rules! broadcast {
+    ( $bb:expr, $x:expr ) => {
+        let _ = $bb.channel.send($x);
+    };
+}
+
 #[get("/ws")]
 async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel<'a> {
     ws.channel(move |mut stream| Box::pin(async move {
         {
             let guesses = bb.guesses.lock().await;
-            send!(stream, OutputMessage::SetPuzzle(&bb.puzzle().name));
+            send!(stream, OutputMessage::SetPuzzle(&bb.puzzle().name, &bb.puzzle().itype, &bb.puzzle().otype));
             send!(stream, OutputMessage::AllGuesses(&*guesses));
         }
 
@@ -67,6 +74,9 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
                         Ok(BroadcastMessage::NewGuess(guess, response)) => {
                             send!(stream, OutputMessage::OneGuess(&guess, &response));
                         }
+                        Ok(BroadcastMessage::NewPuzzle()) => {
+                            send!(stream, OutputMessage::SetPuzzle(&bb.puzzle().name, &bb.puzzle().itype, &bb.puzzle().otype));
+                        }
                         Err(_) => {}
                     }
                 }
@@ -77,7 +87,7 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
                             match json::from_str(&txt) {
                                 Ok(InputMessage::MakeGuess(guess)) => {
                                     if let Ok(response) = (bb.puzzle().evaluate)(&guess) {
-                                        let _ = bb.channel.send(BroadcastMessage::NewGuess(guess.clone(), response.clone()));
+                                        broadcast!(bb, BroadcastMessage::NewGuess(guess.clone(), response.clone()));
                                         let mut guesses = bb.guesses.lock().await;
                                         guesses.push((guess, response));
                                     }
@@ -96,6 +106,15 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
     }))
 }
 
+#[get("/set/<idx>")]
+async fn route_set_puzzle(idx: usize, bb: &State<BlackBox>) -> &'static str {
+    let mut guesses = bb.guesses.lock().await;
+    guesses.clear();
+    bb.set_puzzle(idx);
+    broadcast!(bb, BroadcastMessage::NewPuzzle());
+    "done"
+}
+
 #[launch]
 fn rocket() -> _ {
     let (tx, _rx) = broadcast::channel(99);
@@ -106,5 +125,5 @@ fn rocket() -> _ {
             puzzle_idx: AtomicUsize::new(0)
         })
         .mount("/", FileServer::from("dist"))
-        .mount("/", routes![route_ws])
+        .mount("/", routes![route_ws, route_set_puzzle])
 }
