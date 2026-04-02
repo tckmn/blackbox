@@ -1,4 +1,4 @@
-let itype, otype, extractGuess;
+let itype, otype, extractGuess, history;
 
 function wrap(s) {
     const el = document.createElement('div');
@@ -59,7 +59,18 @@ window.addEventListener('load', () => {
     const area = document.getElementById('guessArea');
     form.addEventListener('submit', e => {
         e.preventDefault();
-        ws.send(JSON.stringify({MakeGuess: extractGuess()}));
+        const guess = extractGuess();
+        if (history[guess]) {
+            history[guess].scrollIntoView();
+            // TODO this is temporary
+            history[guess].animate([
+                { backgroundColor: 'rgba(255,200,50,0)' },
+                { backgroundColor: 'rgba(255,200,50,255)' },
+                { backgroundColor: 'rgba(255,200,50,0)' },
+                { backgroundColor: 'rgba(255,200,50,255)' },
+                { backgroundColor: 'rgba(255,200,50,0)' }
+            ], 1000);
+        } else ws.send(JSON.stringify({MakeGuess: guess}));
     });
 
     const handlers = {
@@ -69,19 +80,24 @@ window.addEventListener('load', () => {
             otype = puzzle[2];
             area.replaceChildren();
             extractGuess = makeGuessField[itype](area);
+            history = {};
             grid.replaceChildren();
         },
 
         AllGuesses: guesses => {
             grid.replaceChildren(...guesses.flatMap(pair => [
-                render[itype](pair[0]),
+                (history[pair[0]] = render[itype](pair[0])),
                 render[otype](pair[1])
             ]));
         },
 
         OneGuess: pair => {
-            grid.append(render[itype](pair[0]));
+            // const atBottom = grid.scrollHeight - grid.scrollTop - grid.clientHeight < 1;
+            const atBottom = document.body.scrollHeight - window.scrollY - window.innerHeight < 1;
+            console.log(grid.scrollHeight, grid.scrollTop, grid.clientHeight, atBottom);
+            grid.append(history[pair[0]] = render[itype](pair[0]));
             grid.append(render[otype](pair[1]));
+            if (atBottom) window.scrollTo(0, document.body.scrollHeight);
         }
 
     };

@@ -8,14 +8,36 @@ use rocket::futures::{StreamExt, SinkExt};
 use rocket::serde::{json, Serialize, Deserialize};
 use std::sync::Arc;
 use std::sync::atomic::{Ordering, AtomicUsize};
+use std::collections::HashSet;
 
 mod puzzle;
 mod all_puzzles;
 use all_puzzles::ALL_PUZZLES;
 
+struct Guesses {
+    vec: Vec<(String, String)>,
+    set: HashSet<String>
+}
+
+impl Guesses {
+    fn new() -> Guesses {
+        return Guesses { vec: Vec::new(), set: HashSet::new() };
+    }
+    fn add(&mut self, guess: &String, response: &String) -> bool {
+        if self.set.contains(guess) { return false; }
+        self.set.insert(guess.clone());
+        self.vec.push((guess.clone(), response.clone()));
+        return true;
+    }
+    fn clear(&mut self) {
+        self.vec.clear();
+        self.set.clear();
+    }
+}
+
 struct BlackBox {
     channel: broadcast::Sender<BroadcastMessage>,
-    guesses: Arc<Mutex<Vec<(String, String)>>>,
+    guesses: Arc<Mutex<Guesses>>,
     puzzle_idx: AtomicUsize
 }
 
@@ -63,7 +85,7 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
         {
             let guesses = bb.guesses.lock().await;
             send!(stream, OutputMessage::SetPuzzle(&bb.puzzle().name, &bb.puzzle().itype, &bb.puzzle().otype));
-            send!(stream, OutputMessage::AllGuesses(&*guesses));
+            send!(stream, OutputMessage::AllGuesses(&guesses.vec));
         }
 
         let mut rx = bb.channel.subscribe();
@@ -87,9 +109,10 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
                             match json::from_str(&txt) {
                                 Ok(InputMessage::MakeGuess(guess)) => {
                                     if let Ok(response) = (bb.puzzle().evaluate)(&guess) {
-                                        broadcast!(bb, BroadcastMessage::NewGuess(guess.clone(), response.clone()));
                                         let mut guesses = bb.guesses.lock().await;
-                                        guesses.push((guess, response));
+                                        if guesses.add(&guess, &response) {
+                                            broadcast!(bb, BroadcastMessage::NewGuess(guess, response));
+                                        }
                                     }
                                 }
                                 Err(e) => { eprintln!("{}", e); }
@@ -121,7 +144,7 @@ fn rocket() -> _ {
     rocket::build()
         .manage(BlackBox {
             channel: tx,
-            guesses: Arc::new(Mutex::new(Vec::new())),
+            guesses: Arc::new(Mutex::new(Guesses::new())),
             puzzle_idx: AtomicUsize::new(0)
         })
         .mount("/", FileServer::from("dist"))

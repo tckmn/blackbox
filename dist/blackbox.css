@@ -1,6 +1,6 @@
 html, body { font: 12pt sans-serif; }
 
-main#grid { display: grid; grid-template-columns: 1fr 1fr; }
+main#grid { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 3.5rem; }
 body.col1 main#grid { grid-template-columns: 1fr; }
 body.col1 main#grid > div:nth-child(2n) { margin-bottom: 10px; }
 
