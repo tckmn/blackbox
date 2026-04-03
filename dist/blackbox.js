@@ -7,7 +7,7 @@ function wrap(s) {
 }
 
 function take(el) {
-    const ret = el.value;
+    const ret = el.value.trim();
     el.value = '';
     return ret;
 }
