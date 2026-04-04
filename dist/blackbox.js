@@ -37,6 +37,7 @@ const makeGuessField = {
 
 window.addEventListener('load', () => {
     const gridcont = document.getElementsByTagName('main')[0];
+    const nav = document.getElementsByTagName('nav')[0];
     const grid = document.getElementById('grid');
     const status = document.getElementById('status');
     const puzname = document.getElementById('puzname');
@@ -103,6 +104,15 @@ window.addEventListener('load', () => {
             grid.append(history[pair[0]] = render[itype](pair[0]));
             grid.append(render[otype](pair[1]));
             if (atBottom) grid.scrollIntoView(false);
+        },
+
+        Failed: () => {
+            nav.animate([
+                { backgroundColor: '#ccc' },
+                { backgroundColor: '#f55' },
+                { backgroundColor: '#f55' },
+                { backgroundColor: '#ccc' }
+            ], 500);
         }
 
     };

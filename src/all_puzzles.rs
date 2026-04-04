@@ -20,6 +20,6 @@ macro_rules! puzzles {
 
 
 puzzles!(
-    make_puzzle("one".into(), STR, STR, |s: &String| { format!("[{}]", s) }),
-    make_puzzle("two".into(), NUM, NUM, |n: &i64| { n + 1 })
+    make_puzzle("one".into(), STR, STR, |s: &String| { Some(format!("[{}]", s)) }),
+    make_puzzle("two".into(), NUM, NUM, |n: &i64| { Some(n + 1) })
 );

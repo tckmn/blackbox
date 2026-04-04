@@ -64,7 +64,8 @@ enum InputMessage {
 enum OutputMessage<'a> {
     SetPuzzle(&'a String, &'a puzzle::PuzType, &'a puzzle::PuzType),
     AllGuesses(&'a Vec<(String, String)>),
-    OneGuess(&'a String, &'a String)
+    OneGuess(&'a String, &'a String),
+    Failed()
 }
 
 macro_rules! send {
@@ -108,11 +109,13 @@ async fn route_ws<'a>(ws: ws::WebSocket, bb: &'a State<BlackBox>) -> ws::Channel
                         Ok(ws::Message::Text(txt)) => {
                             match json::from_str(&txt) {
                                 Ok(InputMessage::MakeGuess(guess)) => {
-                                    if let Ok(response) = (bb.puzzle().evaluate)(&guess) {
+                                    if let Some(response) = (bb.puzzle().evaluate)(&guess) {
                                         let mut guesses = bb.guesses.lock().await;
                                         if guesses.add(&guess, &response) {
                                             broadcast!(bb, BroadcastMessage::NewGuess(guess, response));
                                         }
+                                    } else {
+                                        send!(stream, OutputMessage::Failed());
                                     }
                                 }
                                 Err(e) => { eprintln!("{}", e); }

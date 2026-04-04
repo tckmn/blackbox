@@ -4,7 +4,7 @@ pub struct Puzzle {
     pub name: String,
     pub itype: PuzType,
     pub otype: PuzType,
-    pub evaluate: Box<dyn Fn(&String) -> Result<String, json::serde_json::Error> + Send + Sync>
+    pub evaluate: Box<dyn Fn(&String) -> Option<String> + Send + Sync>
 }
 
 #[derive(Serialize)]
@@ -13,9 +13,9 @@ pub enum PuzType {
     STR, NUM
 }
 
-pub fn make_puzzle<T: DeserializeOwned, U: Serialize, H: Fn(&T) -> U + 'static + Send + Sync>(name: String, itype: PuzType, otype: PuzType, evaluate: H) -> Puzzle {
+pub fn make_puzzle<T: DeserializeOwned, U: Serialize, H: Fn(&T) -> Option<U> + 'static + Send + Sync>(name: String, itype: PuzType, otype: PuzType, evaluate: H) -> Puzzle {
     return Puzzle {
         name, itype, otype,
-        evaluate: Box::new(move |s| { json::to_string(&evaluate(&json::from_str(s)?)) })
+        evaluate: Box::new(move |s| { evaluate(&json::from_str(s).ok()?).and_then(|x| json::to_string(&x).ok()) })
     };
 }

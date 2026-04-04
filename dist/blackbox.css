@@ -11,11 +11,11 @@ nav input { font-size: 13pt; margin: 0.5rem 0; }
 nav > div#puzname { font-size: 12pt; }
 nav > * { margin: 0 0.5rem; }
 nav > div.btn { margin: 0; padding: 0 0.5rem; align-self: stretch; display: flex; align-items: center; cursor: pointer; user-select: none; }
-nav > div.btn:hover { background-color: #bbb; }
+nav > div.btn:hover { background-color: rgba(0,0,0,0.08); }
 nav > div.col > div { display: flex; align-items: stretch; justify-content: stretch; gap: 1px; width: 1rem; height: 1rem; }
 nav > div.col > div > div { border: 1px solid black; flex: 1; }
 nav > div.col#col1 > div { flex-direction: column; }
-body.col1 div.col#col1, body.col2 div.col#col2 { background-color: #aaa; }
+body.col1 div.col#col1, body.col2 div.col#col2 { background-color: rgba(0,0,0,0.15); }
 nav > form { flex: 1; display: flex; }
 nav > form > div#guessArea { flex: 1; display: flex; }
 nav > form > div#guessArea > input { flex: 1; }
