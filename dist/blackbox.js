@@ -36,8 +36,10 @@ const makeGuessField = {
 };
 
 window.addEventListener('load', () => {
+    const gridcont = document.getElementsByTagName('main')[0];
     const grid = document.getElementById('grid');
     const status = document.getElementById('status');
+    const puzname = document.getElementById('puzname');
 
     let ws, retry;
     const connect = () => {
@@ -76,6 +78,7 @@ window.addEventListener('load', () => {
     const handlers = {
 
         SetPuzzle: puzzle => {
+            puzname.textContent = puzzle[0];
             itype = puzzle[1];
             otype = puzzle[2];
             area.replaceChildren();
@@ -92,12 +95,10 @@ window.addEventListener('load', () => {
         },
 
         OneGuess: pair => {
-            // const atBottom = grid.scrollHeight - grid.scrollTop - grid.clientHeight < 1;
-            const atBottom = document.body.scrollHeight - window.scrollY - window.innerHeight < 1;
-            console.log(grid.scrollHeight, grid.scrollTop, grid.clientHeight, atBottom);
+            const atBottom = gridcont.scrollHeight - gridcont.scrollTop - gridcont.clientHeight < 2;
             grid.append(history[pair[0]] = render[itype](pair[0]));
             grid.append(render[otype](pair[1]));
-            if (atBottom) window.scrollTo(0, document.body.scrollHeight);
+            if (atBottom) grid.scrollIntoView(false);
         }
 
     };
