@@ -41,8 +41,9 @@ window.addEventListener('load', () => {
     const status = document.getElementById('status');
     const puzname = document.getElementById('puzname');
 
-    let ws, retry;
+    let ws, retry, reconnecting = false;
     const connect = () => {
+        reconnecting = false;
         delete status.dataset.status;
         ws = new WebSocket('/ws');
         ws.addEventListener('open', () => { status.dataset.status = 'good'; retry = undefined; });
@@ -51,9 +52,12 @@ window.addEventListener('load', () => {
         ws.addEventListener('message', msg => { const j = JSON.parse(msg.data); handlers[j.t](j.c); });
     };
     const reconnect = () => {
-        status.dataset.status = 'bad';
-        ws.close();
-        setTimeout(connect, retry ? (retry*=1.5) : (retry=1000));
+        if (!reconnecting) {
+            reconnecting = true;
+            status.dataset.status = 'bad';
+            ws.close();
+            setTimeout(connect, retry ? (retry*=1.5) : (retry=1000));
+        }
     };
     connect();
 
